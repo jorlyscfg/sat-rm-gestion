@@ -6,6 +6,7 @@ import { StatusBadge } from '@/components/ui/status-badge'
 import { TASK_TYPE_LABELS, TASK_STATUS_LABELS, TASK_PRIORITY_LABELS, TASK_STATUS_COLORS, TASK_PRIORITY_COLORS, ZONE_LABELS, ZONE_COLORS, ASSET_TYPE_LABELS, BARRIER_TYPE_LABELS, formatDate } from '@/lib/utils'
 import { TaskActions } from './task-actions'
 import { OperationControls } from '@/components/ui/operation-controls'
+import { BarrierList } from './barrier-list'
 
 export default async function TaskDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const profile = await getCurrentProfile()
@@ -115,20 +116,11 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
 
 
           {task.task_barriers && task.task_barriers.length > 0 && (
-            <div className="mt-4 pt-4 border-t border-zinc-100">
-              <h3 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-3">Barreras Asignadas</h3>
-                {task.task_barriers.map(({ barrier }, idx) => {
-                  if (!barrier) return null;
-                  return (
-                  <div key={barrier.id || idx} className="flex items-center gap-3 p-2 bg-zinc-50 rounded-lg border border-zinc-100 mb-2">
-                    <span className="text-base">🚧</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold text-zinc-900">{barrier.name}</p>
-                      <p className="text-[9px] text-zinc-500 uppercase tracking-wider">{BARRIER_TYPE_LABELS[barrier.type] || barrier.type} {barrier.length_m ? `(${barrier.length_m}m)` : ''}</p>
-                    </div>
-                  </div>
-                )})}
-            </div>
+            <BarrierList 
+              taskBarriers={task.task_barriers} 
+              client={task.client} 
+              canDeploy={canChangeStatus} 
+            />
           )}
 
           <div className="mt-3 pt-3 border-t border-zinc-100 grid grid-cols-2 gap-y-2 text-xs text-zinc-500">

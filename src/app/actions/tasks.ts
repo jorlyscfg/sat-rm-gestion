@@ -67,7 +67,7 @@ export async function getTaskById(id: string): Promise<{ data: (Task & { logs: T
 
   const { data: task, error: taskError } = await insforge.database
     .from('tasks')
-    .select('*, assigned_profile:profiles!tasks_assigned_to_fkey(id, name, role), created_by_profile:profiles!tasks_created_by_fkey(id, name, role), client:clients(id, name), task_assets(asset:assets(*, assigned_operator:profiles!assets_assigned_operator_id_fkey(id, name, role))), task_barriers(barrier:barriers(*)), origin_collection_point:collection_points!tasks_origin_collection_point_id_fkey(id, name), destination_collection_point:collection_points!tasks_destination_collection_point_id_fkey(id, name)')
+    .select('*, assigned_profile:profiles!tasks_assigned_to_fkey(id, name, role), created_by_profile:profiles!tasks_created_by_fkey(id, name, role), client:clients(*), task_assets(asset:assets(*, assigned_operator:profiles!assets_assigned_operator_id_fkey(id, name, role))), task_barriers(barrier:barriers(*)), origin_collection_point:collection_points!tasks_origin_collection_point_id_fkey(id, name), destination_collection_point:collection_points!tasks_destination_collection_point_id_fkey(id, name)')
     .eq('id', id)
     .single()
 
