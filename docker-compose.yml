@@ -1,0 +1,19 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_INSFORGE_URL=${NEXT_PUBLIC_INSFORGE_URL}
+        - NEXT_PUBLIC_INSFORGE_ANON_KEY=${NEXT_PUBLIC_INSFORGE_ANON_KEY}
+        - NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
+    restart: always
+    environment:
+      - INSFORGE_ANON_KEY=${INSFORGE_ANON_KEY}
+      - JWT_SECRET=${JWT_SECRET}
+    networks:
+      - dokploy-network
+
+networks:
+  dokploy-network:
+    external: true
