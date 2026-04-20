@@ -1,0 +1,57 @@
+[90m┌───────────────────────────────────────────────────────────────────────────────────────────────┐[39m
+[90m│[39m[36m pg_get_functiondef                                                                            [39m[90m│[39m
+[90m├───────────────────────────────────────────────────────────────────────────────────────────────┤[39m
+[90m│[39m CREATE OR REPLACE FUNCTION public.handle_new_user()                                           [90m│[39m
+[90m│[39m  RETURNS trigger                                                                              [90m│[39m
+[90m│[39m  LANGUAGE plpgsql                                                                             [90m│[39m
+[90m│[39m  SECURITY DEFINER                                                                             [90m│[39m
+[90m│[39m  SET search_path TO 'public'                                                                  [90m│[39m
+[90m│[39m AS $function$                                                                                 [90m│[39m
+[90m│[39m DECLARE                                                                                       [90m│[39m
+[90m│[39m   new_org_id UUID;                                                                            [90m│[39m
+[90m│[39m   new_role user_role := 'operador';                                                           [90m│[39m
+[90m│[39m   raw_name TEXT;                                                                              [90m│[39m
+[90m│[39m   parsed_name TEXT;                                                                           [90m│[39m
+[90m│[39m   p_org_name TEXT;                                                                            [90m│[39m
+[90m│[39m BEGIN                                                                                         [90m│[39m
+[90m│[39m   -- We use the 'name' field as a transport for metadata if formatted correctly: 'Name | Org' [90m│[39m
+[90m│[39m   raw_name := COALESCE(NEW.profile->>'name', NEW.metadata->>'name', NEW.email);               [90m│[39m
+[90m│[39m                                                                                               [90m│[39m
+[90m│[39m   IF raw_name LIKE '%|%' THEN                                                                 [90m│[39m
+[90m│[39m     parsed_name := TRIM(SPLIT_PART(raw_name, '|', 1));                                        [90m│[39m
+[90m│[39m     p_org_name := TRIM(SPLIT_PART(raw_name, '|', 2));                                         [90m│[39m
+[90m│[39m   ELSE                                                                                        [90m│[39m
+[90m│[39m     parsed_name := raw_name;                                                                  [90m│[39m
+[90m│[39m     -- Fallback to other columns if present                                                   [90m│[39m
+[90m│[39m     p_org_name := COALESCE(                                                                   [90m│[39m
+[90m│[39m       NEW.profile->>'organization_name',                                                      [90m│[39m
+[90m│[39m       NEW.metadata->>'organization_name'                                                      [90m│[39m
+[90m│[39m     );                                                                                        [90m│[39m
+[90m│[39m   END IF;                                                                                     [90m│[39m
+[90m│[39m                                                                                               [90m│[39m
+[90m│[39m   -- Create organization if name is provided                                                  [90m│[39m
+[90m│[39m   IF p_org_name IS NOT NULL AND p_org_name <> '' THEN                                         [90m│[39m
+[90m│[39m     INSERT INTO organizations (name, slug)                                                    [90m│[39m
+[90m│[39m     VALUES (p_org_name, LOWER(REGEXP_REPLACE(p_org_name, '\s+', '-', 'g')))                   [90m│[39m
+[90m│[39m     ON CONFLICT (slug) DO UPDATE SET name = EXCLUDED.name                                     [90m│[39m
+[90m│[39m     RETURNING id INTO new_org_id;                                                             [90m│[39m
+[90m│[39m                                                                                               [90m│[39m
+[90m│[39m     new_role := 'gerente';                                                                    [90m│[39m
+[90m│[39m   ELSIF (SELECT COUNT(*) FROM profiles) = 0 THEN                                              [90m│[39m
+[90m│[39m     new_role := 'superadmin';                                                                 [90m│[39m
+[90m│[39m   END IF;                                                                                     [90m│[39m
+[90m│[39m                                                                                               [90m│[39m
+[90m│[39m   INSERT INTO profiles (user_id, name, role, organization_id, is_active)                      [90m│[39m
+[90m│[39m   VALUES (                                                                                    [90m│[39m
+[90m│[39m     NEW.id,                                                                                   [90m│[39m
+[90m│[39m     parsed_name,                                                                              [90m│[39m
+[90m│[39m     new_role,                                                                                 [90m│[39m
+[90m│[39m     new_org_id,                                                                               [90m│[39m
+[90m│[39m     true                                                                                      [90m│[39m
+[90m│[39m   );                                                                                          [90m│[39m
+[90m│[39m   RETURN NEW;                                                                                 [90m│[39m
+[90m│[39m END;                                                                                          [90m│[39m
+[90m│[39m $function$                                                                                    [90m│[39m
+[90m│[39m                                                                                               [90m│[39m
+[90m└───────────────────────────────────────────────────────────────────────────────────────────────┘[39m
+1 row(s) returned.

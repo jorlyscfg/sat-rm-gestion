@@ -1,0 +1,66 @@
+@import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+
+@theme inline {
+  --color-background: var(--color-white);
+  --color-foreground: var(--color-zinc-900);
+  --color-primary: var(--color-teal-600);
+  --color-primary-light: var(--color-teal-50);
+  --color-primary-dark: var(--color-teal-800);
+  --color-secondary: var(--color-cyan-600);
+  --color-accent: var(--color-amber-500);
+  --color-danger: var(--color-red-600);
+  --color-success: var(--color-green-600);
+  --color-warning: var(--color-amber-500);
+  --color-muted: var(--color-zinc-500);
+  --color-card: var(--color-white);
+  --color-border: var(--color-zinc-200);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--color-zinc-50);
+  color: var(--color-foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+.leaflet-container-visible {
+  width: 100%;
+  height: 100%;
+}
+
+.leaflet-control-layers-list {
+  background-color: white;
+  border-radius: 4px;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.25);
+  padding: 6px 10px;
+  margin-top: 4px;
+}
+
+.leaflet-control-layers {
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+}
+
+.leaflet-control-layers-toggle {
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.leaflet-control-layers-expanded {
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
