@@ -96,7 +96,57 @@ export async function updateAsset(id: string, updates: Partial<Asset>): Promise<
 }
 
 export async function getAvailableAssets(type?: string): Promise<{ data: Asset[] | null; error: string | null }> {
-  return getAssets({ status: 'disponible', type })
+  const { accessToken } = await getAuthCookies()
+  if (!accessToken) return { data: null, error: 'No autenticado' }
+
+  const insforge = createInsForgeServerClient(accessToken)
+  const profile = await getCurrentProfile()
+  if (!profile) return { data: null, error: 'Sin permisos' }
+
+  let query = insforge.database
+    .from('assets')
+    .select('*, task_assets(task_id, tasks(status))')
+    .eq('status', 'disponible')
+
+  if (profile.role !== 'superadmin') {
+    if (!profile.organization_id) return { data: [], error: null }
+    query = query.eq('organization_id', profile.organization_id)
+  }
+
+  if (type) {
+    query = query.eq('type', type)
+  }
+
+  const { data, error } = await query
+
+  if (error) {
+    console.error('[getAvailableAssets] DB Error:', error.message)
+    return { data: null, error: error.message }
+  }
+
+  // Filter out assets that are assigned to an active task
+  const activeStatuses = ['pendiente', 'asignada', 'en_progreso']
+  const availableAssets = (data as any[]).filter(asset => {
+    if (!asset.task_assets || asset.task_assets.length === 0) return true
+    
+    // Check if any of the linked tasks are currently active
+    const hasActiveTask = asset.task_assets.some((ta: any) => {
+      // If task is null, maybe it was deleted but pivot remained, we ignore it
+      const relatedTask = ta.tasks || ta.task;
+      if (!relatedTask) return false
+      
+      // PostgREST might return an array if the relation is ambiguous
+      if (Array.isArray(relatedTask)) {
+        return relatedTask.some((t: any) => activeStatuses.includes(t.status))
+      }
+      
+      return activeStatuses.includes(relatedTask.status)
+    })
+
+    return !hasActiveTask
+  })
+
+  return { data: availableAssets as Asset[], error: null }
 }
 
 export async function assignOperatorToAsset(

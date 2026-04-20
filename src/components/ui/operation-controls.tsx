@@ -50,7 +50,7 @@ export function OperationControls({ task }: OperationControlsProps) {
     loadOperationData()
   }, [loadOperationData])
 
-  const assets = task.task_assets?.map(ta => ta.asset) || []
+  const assets = task.task_assets?.map(ta => ta.asset).filter((a): a is Asset => a !== undefined) || []
 
   // --- Marine Logic ---
   const handleStartMarine = () => {

@@ -108,11 +108,13 @@ export default function TareasPage() {
                 )}
                 {task.task_assets && task.task_assets.length > 0 && (
                   <span className="flex items-center gap-0.5 ml-1">
-                    {task.task_assets.slice(0, 3).map(({ asset }) => (
-                      <span key={asset.id} title={asset.name} className="text-sm">
+                    {task.task_assets.slice(0, 3).map(({ asset }, idx) => {
+                      if (!asset) return null;
+                      return (
+                      <span key={asset.id || idx} title={asset.name} className="text-sm">
                         {asset.type === 'embarcacion' ? '🚤' : asset.type === 'camion' ? '🚛' : '🛻'}
                       </span>
-                    ))}
+                    )})}
                     {task.task_assets.length > 3 && (
                       <span className="text-[10px] text-zinc-400">+{task.task_assets.length - 3}</span>
                     )}

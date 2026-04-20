@@ -96,13 +96,18 @@ export interface Task {
   completed_at?: string
   client_id?: string
   client?: Client
+  origin_collection_point_id?: string
+  destination_collection_point_id?: string
   organization_id?: string
   created_at: string
   updated_at: string
   zone?: string
-  task_assets?: { asset: Asset }[]
+  task_assets?: TaskAsset[]
+  task_barriers?: TaskBarrier[]
   assigned_profile?: Profile
   created_by_profile?: Profile
+  origin_collection_point?: CollectionPoint
+  destination_collection_point?: CollectionPoint
 }
 
 export interface TaskLog {
@@ -148,10 +153,34 @@ export interface Asset {
   current_task_id?: string | null
   organization_id?: string
   image_urls?: string[]
-  assigned_operator_id?: string | null
-  assigned_operator?: Profile
   created_at: string
   updated_at: string
+  asset_operators?: AssetOperator[]
+  task_assets?: TaskAsset[]
+}
+
+export interface TaskAsset {
+  task_id: string
+  asset_id: string
+  assigned_at: string
+  asset?: Asset
+  task?: Task
+}
+
+export interface TaskBarrier {
+  task_id: string
+  barrier_id: string
+  assigned_at: string
+  barrier?: Barrier
+  task?: Task
+}
+
+export interface AssetOperator {
+  asset_id: string
+  profile_id: string
+  assigned_at: string
+  profile?: Profile
+  asset?: Asset
 }
 
 export interface Barrier {

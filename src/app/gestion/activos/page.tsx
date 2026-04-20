@@ -182,17 +182,19 @@ export default function ActivosPage() {
                 {a.capacity && <p className="text-xs text-zinc-500 mt-1">Capacidad: {a.capacity} m³</p>}
                 {a.description && <p className="text-xs text-zinc-400 mt-1">{a.description}</p>}
 
-                {/* Assigned operator */}
-                <div className="mt-2 flex items-center gap-1.5">
-                  {a.assigned_operator ? (
-                    <span className="inline-flex items-center gap-1 text-xs text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full border border-teal-100 font-medium">
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
-                      {a.assigned_operator.name}
-                    </span>
+                {/* Assigned operators */}
+                <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                  {a.asset_operators && a.asset_operators.length > 0 ? (
+                    a.asset_operators.map((ao, idx) => (
+                      <span key={idx} className="inline-flex items-center gap-1 text-xs text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full border border-teal-100 font-medium">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
+                        {ao.profile?.name || 'Operador'}
+                      </span>
+                    ))
                   ) : (
                     <span className="inline-flex items-center gap-1 text-xs text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full border border-orange-100 font-medium">
                       <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
-                      Sin operador asignado
+                      Sin operadores asignados
                     </span>
                   )}
                 </div>

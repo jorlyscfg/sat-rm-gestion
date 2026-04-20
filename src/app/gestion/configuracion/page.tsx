@@ -155,7 +155,7 @@ export default function ConfiguracionPage() {
                         </div>
                         {/* Assigned asset for operators */}
                         {p.role === 'operador' && (() => {
-                          const assignedAsset = assets.find(a => a.assigned_operator_id === p.id)
+                          const assignedAsset = assets.find(a => a.asset_operators?.some(ao => ao.profile_id === p.id))
                           return assignedAsset ? (
                             <span className="inline-flex items-center gap-1 text-[10px] text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full border border-teal-100 font-medium mt-1">
                               {assignedAsset.type === 'embarcacion' ? '🚤' : assignedAsset.type === 'camion' ? '🚛' : '🛻'} {assignedAsset.name}
@@ -333,7 +333,7 @@ function UserFormModal({ profile, assets, currentUserRole, onClose, onSuccess }:
   const [currentUser, setCurrentUser] = useState<Profile | null>(null)
   
   // Asset assignment state (only for operator profiles being edited)
-  const currentAssignedAsset = profile ? assets.find(a => a.assigned_operator_id === profile.id) : undefined
+  const currentAssignedAsset = profile ? assets.find(a => a.asset_operators?.some(ao => ao.profile_id === profile.id)) : undefined
   const [selectedAssetId, setSelectedAssetId] = useState<string>(currentAssignedAsset?.id || '')
 
   useEffect(() => {
@@ -356,8 +356,9 @@ function UserFormModal({ profile, assets, currentUserRole, onClose, onSuccess }:
   }, [])
 
   // Assets available for selection: unassigned ones + the current one already assigned to this operator
+  // Or since multiple operators can be assigned, we could show all, but we keep logic similar:
   const availableAssets = assets.filter(a => 
-    !a.assigned_operator_id || a.assigned_operator_id === profile?.id
+    !a.asset_operators?.length || a.asset_operators?.some(ao => ao.profile_id === profile?.id)
   )
 
   const isEditingOperator = !!profile && (formData.role === 'operador' || profile.role === 'operador')
@@ -558,7 +559,7 @@ function UserFormModal({ profile, assets, currentUserRole, onClose, onSuccess }:
                 {availableAssets.map(asset => (
                   <option key={asset.id} value={asset.id}>
                     {asset.type === 'embarcacion' ? '🚤' : asset.type === 'camion' ? '🚛' : '🛻'} {asset.name} — {ASSET_TYPE_LABELS[asset.type]}
-                    {asset.assigned_operator_id === profile?.id ? ' (actual)' : ''}
+                    {asset.asset_operators?.some(ao => ao.profile_id === profile?.id) ? ' (actual)' : ''}
                   </option>
                 ))}
               </select>

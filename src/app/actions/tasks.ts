@@ -25,7 +25,7 @@ export async function getTasks(filters?: TaskFilters): Promise<{ data: Task[] | 
 
   let query = insforge.database
     .from('tasks')
-    .select('*, assigned_profile:profiles!tasks_assigned_to_fkey(id, name, role), created_by_profile:profiles!tasks_created_by_fkey(id, name, role), task_assets(asset:assets(*, assigned_operator:profiles!assets_assigned_operator_id_fkey(id, name, role)))')
+    .select('*, assigned_profile:profiles!tasks_assigned_to_fkey(id, name, role), created_by_profile:profiles!tasks_created_by_fkey(id, name, role), task_assets(asset:assets(*, assigned_operator:profiles!assets_assigned_operator_id_fkey(id, name, role))), task_barriers(barrier:barriers(*))')
     .order('created_at', { ascending: false })
 
   if (filters?.statuses && filters.statuses.length > 0) query = query.in('status', filters.statuses)
@@ -67,7 +67,7 @@ export async function getTaskById(id: string): Promise<{ data: (Task & { logs: T
 
   const { data: task, error: taskError } = await insforge.database
     .from('tasks')
-    .select('*, assigned_profile:profiles!tasks_assigned_to_fkey(id, name, role), created_by_profile:profiles!tasks_created_by_fkey(id, name, role), client:clients(id, name), task_assets(asset:assets(*, assigned_operator:profiles!assets_assigned_operator_id_fkey(id, name, role)))')
+    .select('*, assigned_profile:profiles!tasks_assigned_to_fkey(id, name, role), created_by_profile:profiles!tasks_created_by_fkey(id, name, role), client:clients(id, name), task_assets(asset:assets(*, assigned_operator:profiles!assets_assigned_operator_id_fkey(id, name, role))), task_barriers(barrier:barriers(*)), origin_collection_point:collection_points!tasks_origin_collection_point_id_fkey(id, name), destination_collection_point:collection_points!tasks_destination_collection_point_id_fkey(id, name)')
     .eq('id', id)
     .single()
 
@@ -97,6 +97,9 @@ export async function createTask(input: {
   client_id?: string
   zone?: string
   asset_ids?: string[]
+  barrier_ids?: string[]
+  origin_collection_point_id?: string
+  destination_collection_point_id?: string
 }): Promise<{ data: Task | null; error: string | null }> {
   const { accessToken } = await getAuthCookies()
   if (!accessToken) return { data: null, error: 'No autenticado' }
@@ -143,6 +146,8 @@ export async function createTask(input: {
       status,
       scheduled_at: input.scheduled_at || null,
       zone: input.zone || null,
+      origin_collection_point_id: input.origin_collection_point_id || null,
+      destination_collection_point_id: input.destination_collection_point_id || null,
     }])
     .select()
     .single()
@@ -172,6 +177,15 @@ export async function createTask(input: {
     }))
     const { error: assetError } = await insforge.database.from('task_assets').insert(assetInserts)
     if (assetError) console.error('[TaskAction] Error linking assets', assetError)
+  }
+
+  if (input.barrier_ids && input.barrier_ids.length > 0) {
+    const barrierInserts = input.barrier_ids.map(barrierId => ({
+      task_id: data!.id,
+      barrier_id: barrierId
+    }))
+    const { error: barrierError } = await insforge.database.from('task_barriers').insert(barrierInserts)
+    if (barrierError) console.error('[TaskAction] Error linking barriers', barrierError)
   }
 
   return { data: data as Task, error: null }

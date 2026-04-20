@@ -3,14 +3,15 @@
 import { useState, useEffect, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { createTask } from '@/app/actions/tasks'
-import { getAssignableProfiles } from '@/app/actions/profile'
+import { getProfilesByRole } from '@/app/actions/profile'
 import { getClients } from '@/app/actions/clients'
-import { getAvailableAssets } from '@/app/actions/assets'
+import { getAvailableAssets, getBarriers } from '@/app/actions/assets'
+import { getCollectionPoints } from '@/app/actions/collection-points'
 import { useSessionProfile } from '@/components/auth/session-provider'
 import { BottomNav } from '@/components/layout/bottom-nav'
 import { Select } from '@/components/ui/select'
-import { TASK_TYPE_LABELS, TASK_PRIORITY_LABELS, ROLE_LABELS, ZONE_LABELS, ZONE_COLORS, ASSET_TYPE_LABELS } from '@/lib/utils'
-import type { TaskType, TaskPriority, Profile, Client, Asset } from '@/types'
+import { TASK_TYPE_LABELS, TASK_PRIORITY_LABELS, ROLE_LABELS, ZONE_LABELS, ZONE_COLORS, ASSET_TYPE_LABELS, BARRIER_TYPE_LABELS } from '@/lib/utils'
+import type { TaskType, TaskPriority, Profile, Client, Asset, CollectionPoint, Barrier } from '@/types'
 
 const taskTypes: TaskType[] = ['barrera_despliegue', 'colecta_marina', 'limpieza_playa', 'acopio_recepcion', 'disposicion', 'inspeccion']
 const taskPriorities: TaskPriority[] = ['baja', 'media', 'alta', 'urgente']
@@ -29,16 +30,23 @@ export default function NuevaTareaPage() {
   const [clientId, setClientId] = useState('')
   const [zone, setZone] = useState<string>('mar')
   const [assetIds, setAssetIds] = useState<string[]>([])
+  const [barrierIds, setBarrierIds] = useState<string[]>([])
+  const [originPointId, setOriginPointId] = useState<string>('')
+  const [destinationPointId, setDestinationPointId] = useState<string>('')
   
   const [operators, setOperators] = useState<Profile[]>([])
   const [clients, setClients] = useState<Client[]>([])
   const [availableAssets, setAvailableAssets] = useState<Asset[]>([])
+  const [availableBarriers, setAvailableBarriers] = useState<Barrier[]>([])
+  const [collectionPoints, setCollectionPoints] = useState<CollectionPoint[]>([])
   const [error, setError] = useState('')
 
   useEffect(() => {
-    getAssignableProfiles().then(res => res.data && setOperators(res.data))
+    getProfilesByRole('coordinador').then(res => res.data && setOperators(res.data))
     getClients({ isActive: true }).then(res => res.data && setClients(res.data))
     getAvailableAssets().then(res => res.data && setAvailableAssets(res.data))
+    getBarriers().then(res => res.data && setAvailableBarriers(res.data.filter(b => b.status === 'almacenada')))
+    getCollectionPoints({ isActive: true }).then(res => res.data && setCollectionPoints(res.data))
   }, [])
 
   // Auto-set zone when client changes
@@ -53,6 +61,10 @@ export default function NuevaTareaPage() {
 
   const toggleAsset = (id: string) => {
     setAssetIds(prev => prev.includes(id) ? prev.filter(aid => aid !== id) : [...prev, id])
+  }
+
+  const toggleBarrier = (id: string) => {
+    setBarrierIds(prev => prev.includes(id) ? prev.filter(bid => bid !== id) : [...prev, id])
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -73,6 +85,9 @@ export default function NuevaTareaPage() {
         client_id: clientId,
         zone,
         asset_ids: assetIds,
+        barrier_ids: barrierIds,
+        origin_collection_point_id: originPointId || undefined,
+        destination_collection_point_id: destinationPointId || undefined,
       })
 
       if (result.error) {
@@ -148,6 +163,30 @@ export default function NuevaTareaPage() {
             required
           />
 
+          <div className="pt-2 border-t border-zinc-100">
+            <h3 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest px-1 mb-3">Ruta de Acopio (Opcional)</h3>
+            <div className="space-y-4">
+              <Select
+                label="Origen (Punto de Acopio)"
+                value={originPointId}
+                onChange={setOriginPointId}
+                options={[
+                  { value: '', label: 'Seleccionar origen (opcional)' },
+                  ...collectionPoints.map(cp => ({ value: cp.id, label: cp.name })),
+                ]}
+              />
+              <Select
+                label="Destino (Punto de Acopio)"
+                value={destinationPointId}
+                onChange={setDestinationPointId}
+                options={[
+                  { value: '', label: 'Seleccionar destino (opcional)' },
+                  ...collectionPoints.map(cp => ({ value: cp.id, label: cp.name })),
+                ]}
+              />
+            </div>
+          </div>
+
           <div>
             <label className="block text-xs font-semibold text-zinc-600 mb-2 ml-1">Zona de Trabajo</label>
             <div className="grid grid-cols-3 gap-2">
@@ -179,7 +218,7 @@ export default function NuevaTareaPage() {
           <h2 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest px-1">Recursos Humanos y Activos</h2>
 
           <Select
-            label="Operador Responsable"
+            label="Coordinador Responsable"
             value={assignedTo}
             onChange={setAssignedTo}
             options={[
@@ -220,6 +259,47 @@ export default function NuevaTareaPage() {
                     </div>
                     {assetIds.includes(asset.id) && (
                       <div className="w-5 h-5 bg-teal-500 rounded-full flex items-center justify-center text-white text-[10px]">
+                        ✓
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-zinc-600 mb-3 ml-1 mt-4">Seleccionar Barreras (Opcional)</label>
+            {availableBarriers.length === 0 ? (
+              <div className="text-center py-6 border-2 border-dashed border-zinc-100 rounded-2xl">
+                <p className="text-xs text-zinc-400">No hay barreras almacenadas</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+                {availableBarriers.map(barrier => (
+                  <button
+                    key={barrier.id}
+                    type="button"
+                    onClick={() => toggleBarrier(barrier.id)}
+                    className={`
+                      w-full flex items-center justify-between p-3 rounded-xl border transition-all
+                      ${barrierIds.includes(barrier.id)
+                        ? 'bg-amber-50 border-amber-200 text-amber-800 ring-2 ring-amber-500/10'
+                        : 'bg-zinc-50 border-zinc-100 text-zinc-600 hover:bg-white hover:border-zinc-200'
+                      }
+                    `}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-lg ${barrierIds.includes(barrier.id) ? 'bg-amber-100' : 'bg-white shadow-sm'}`}>
+                        🚧
+                      </div>
+                      <div className="text-left">
+                        <p className="text-[11px] font-bold">{barrier.name}</p>
+                        <p className="text-[9px] opacity-70 uppercase tracking-wider">{BARRIER_TYPE_LABELS[barrier.type] || barrier.type} {barrier.length_m ? `(${barrier.length_m}m)` : ''}</p>
+                      </div>
+                    </div>
+                    {barrierIds.includes(barrier.id) && (
+                      <div className="w-5 h-5 bg-amber-500 rounded-full flex items-center justify-center text-white text-[10px]">
                         ✓
                       </div>
                     )}

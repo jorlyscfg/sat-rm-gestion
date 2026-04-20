@@ -3,7 +3,7 @@ import { getCurrentProfile } from '@/lib/auth-utils'
 import { getTaskById } from '@/app/actions/tasks'
 import { BottomNav } from '@/components/layout/bottom-nav'
 import { StatusBadge } from '@/components/ui/status-badge'
-import { TASK_TYPE_LABELS, TASK_STATUS_LABELS, TASK_PRIORITY_LABELS, TASK_STATUS_COLORS, TASK_PRIORITY_COLORS, ZONE_LABELS, ZONE_COLORS, ASSET_TYPE_LABELS, formatDate } from '@/lib/utils'
+import { TASK_TYPE_LABELS, TASK_STATUS_LABELS, TASK_PRIORITY_LABELS, TASK_STATUS_COLORS, TASK_PRIORITY_COLORS, ZONE_LABELS, ZONE_COLORS, ASSET_TYPE_LABELS, BARRIER_TYPE_LABELS, formatDate } from '@/lib/utils'
 import { TaskActions } from './task-actions'
 import { OperationControls } from '@/components/ui/operation-controls'
 
@@ -54,16 +54,47 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
 
           {task.location && (
             <p className="text-sm text-zinc-500 mt-2 flex items-center gap-1">
-              <span>📍</span> {task.location}
+              <span>📍</span> Ubicación: {task.location}
             </p>
+          )}
+
+          {(task.origin_collection_point || task.destination_collection_point) && (
+            <div className="mt-4 p-3 bg-zinc-50 rounded-xl border border-zinc-100 space-y-2">
+              <h3 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2">Ruta de Acopio</h3>
+              
+              {task.origin_collection_point && (
+                <div className="flex items-start gap-2">
+                  <div className="w-5 h-5 rounded-full bg-teal-100 flex items-center justify-center shrink-0 mt-0.5">
+                    <span className="text-[10px]">A</span>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-medium text-zinc-500 uppercase">Origen</p>
+                    <p className="text-xs font-bold text-zinc-900">{task.origin_collection_point.name}</p>
+                  </div>
+                </div>
+              )}
+              
+              {task.destination_collection_point && (
+                <div className="flex items-start gap-2">
+                  <div className="w-5 h-5 rounded-full bg-cyan-100 flex items-center justify-center shrink-0 mt-0.5">
+                    <span className="text-[10px]">B</span>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-medium text-zinc-500 uppercase">Destino</p>
+                    <p className="text-xs font-bold text-zinc-900">{task.destination_collection_point.name}</p>
+                  </div>
+                </div>
+              )}
+            </div>
           )}
 
           {task.task_assets && task.task_assets.length > 0 && (
             <div className="mt-4 pt-4 border-t border-zinc-100">
               <h3 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-3">Activos Asignados</h3>
-              <div className="grid grid-cols-1 gap-2">
-                {task.task_assets.map(({ asset }) => (
-                  <div key={asset.id} className="flex items-center gap-3 p-2 bg-zinc-50 rounded-lg border border-zinc-100">
+                {task.task_assets.map(({ asset }, idx) => {
+                  if (!asset) return null;
+                  return (
+                  <div key={asset.id || idx} className="flex items-center gap-3 p-2 bg-zinc-50 rounded-lg border border-zinc-100">
                     <span className="text-base">
                       {asset.type === 'embarcacion' ? '🚤' : asset.type === 'camion' ? '🚛' : '🛻'}
                     </span>
@@ -71,18 +102,34 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
                       <p className="text-xs font-bold text-zinc-900">{asset.name}</p>
                       <p className="text-[9px] text-zinc-500 uppercase tracking-wider">{ASSET_TYPE_LABELS[asset.type]}</p>
                     </div>
-                    {asset.assigned_operator && (
+                    {asset.asset_operators && asset.asset_operators.length > 0 && (
                       <span className="inline-flex items-center gap-1 text-[10px] text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full border border-teal-100 font-medium shrink-0">
                         <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
-                        {asset.assigned_operator.name}
+                        {asset.asset_operators.map(ao => ao.profile?.name).filter(Boolean).join(', ')}
                       </span>
                     )}
                   </div>
-                ))}
-              </div>
+                )})}
             </div>
           )}
 
+
+          {task.task_barriers && task.task_barriers.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-zinc-100">
+              <h3 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-3">Barreras Asignadas</h3>
+                {task.task_barriers.map(({ barrier }, idx) => {
+                  if (!barrier) return null;
+                  return (
+                  <div key={barrier.id || idx} className="flex items-center gap-3 p-2 bg-zinc-50 rounded-lg border border-zinc-100 mb-2">
+                    <span className="text-base">🚧</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-zinc-900">{barrier.name}</p>
+                      <p className="text-[9px] text-zinc-500 uppercase tracking-wider">{BARRIER_TYPE_LABELS[barrier.type] || barrier.type} {barrier.length_m ? `(${barrier.length_m}m)` : ''}</p>
+                    </div>
+                  </div>
+                )})}
+            </div>
+          )}
 
           <div className="mt-3 pt-3 border-t border-zinc-100 grid grid-cols-2 gap-y-2 text-xs text-zinc-500">
             <div>Creado: {formatDate(task.created_at)}</div>
