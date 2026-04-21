@@ -46,7 +46,7 @@ export function TopNav() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-zinc-200 bg-white safe-area-top">
-      <div className="flex items-center justify-between h-14 max-w-lg mx-auto px-4">
+      <div className="flex items-center justify-between h-14 px-4 w-full">
         <div className="flex items-center gap-2 min-w-0">
           <div className="w-7 h-7 shrink-0 rounded-lg bg-teal-600 flex items-center justify-center">
             <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">

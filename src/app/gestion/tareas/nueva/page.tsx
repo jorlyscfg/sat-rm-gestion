@@ -102,7 +102,7 @@ export default function NuevaTareaPage() {
 
   return (
     <div className="flex-1 pt-14 pb-20 bg-zinc-50">
-      <form onSubmit={handleSubmit} className="px-4 py-6 space-y-6 max-w-lg mx-auto">
+      <form onSubmit={handleSubmit} className="px-4 py-6 space-y-6 w-full">
         <div className="flex items-center justify-between mb-2">
           <h1 className="text-xl font-bold text-zinc-900 tracking-tight">Nueva Tarea Operativa</h1>
         </div>

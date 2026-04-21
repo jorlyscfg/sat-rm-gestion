@@ -46,7 +46,7 @@ export default function ConfiguracionPage() {
   }
 
   return (
-    <div className="flex-1 pt-14 pb-20 max-w-lg mx-auto w-full">
+    <div className="flex-1 pt-14 pb-20 w-full">
       <div className="p-4 space-y-6">
         <div className="bg-white p-4 rounded-xl border border-zinc-200 shadow-sm">
           <h1 className="text-xl font-bold text-zinc-900 leading-tight">Configuración</h1>

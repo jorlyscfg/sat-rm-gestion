@@ -68,7 +68,7 @@ export default function ColaboradoresPage() {
   )
 
   return (
-    <div className="flex-1 pt-14 pb-20 max-w-lg mx-auto w-full">
+    <div className="flex-1 pt-14 pb-20 w-full">
       <div className="p-4 space-y-6">
         <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-zinc-200 shadow-sm">
           <div>
@@ -302,7 +302,7 @@ function UserFormModal({ profile, assets, currentUserRole, onClose, onSuccess }:
 
   return (
     <div className="fixed inset-0 bg-zinc-900/60 backdrop-blur-md flex items-end sm:items-center justify-center z-[100] p-0 sm:p-4 animate-in fade-in duration-200">
-      <div className="bg-zinc-50 rounded-t-3xl sm:rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-2 duration-300">
+      <div className="bg-zinc-50 rounded-t-3xl sm:rounded-3xl shadow-2xl w-full overflow-hidden animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-2 duration-300">
         <div className="px-6 py-5 border-b border-zinc-200 flex justify-between items-center bg-white">
           <div>
             <h2 className="text-lg font-bold text-zinc-900">{profile ? 'Editar Colaborador' : 'Nuevo Colaborador'}</h2>
@@ -313,7 +313,7 @@ function UserFormModal({ profile, assets, currentUserRole, onClose, onSuccess }:
           </button>
         </div>
         
-        <form onSubmit={handleSubmit} className="p-6 space-y-5 max-h-[85vh] overflow-y-auto no-scrollbar">
+        <form onSubmit={handleSubmit} className="px-4 py-6 space-y-6 w-full">
           {error && (
             <div className="p-3 bg-red-50 text-red-600 text-xs rounded-xl border border-red-100 flex items-center gap-2 font-medium">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m0-10.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.75c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.598-3.75h-.152c-3.196 0-6.1-1.249-8.25-3.286zm0 13.036h.008v.008H12v-.008z" /></svg>
