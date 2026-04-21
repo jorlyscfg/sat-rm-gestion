@@ -7,6 +7,7 @@ import { AuthSync } from "@/components/auth/auth-sync";
 import { SessionProvider } from "@/components/auth/session-provider";
 import type { Profile, UserRole } from "@/types";
 import { logger } from "@/lib/logger";
+import { PWARegistration } from "@/components/pwa-registration";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -76,6 +77,7 @@ export default async function RootLayout({
     <html lang="es" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`} suppressHydrationWarning>
       <body className="min-h-dvh flex flex-col bg-zinc-50">
         <SessionProvider profile={profile}>
+          <PWARegistration />
           <AuthSync />
           <TopNav />
           {children}
