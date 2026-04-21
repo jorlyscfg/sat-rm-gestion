@@ -29,7 +29,12 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/', request.url))
   }
 
-  return NextResponse.next()
+  const response = NextResponse.next()
+  
+  // Force clear cache and storage to remove bad Service Worker
+  response.headers.set('Clear-Site-Data', '"cache", "storage"')
+  
+  return response
 }
 
 export const config = {
