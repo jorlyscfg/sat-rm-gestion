@@ -16,7 +16,7 @@ export const getCurrentUser = cache(async () => {
     const { data, error } = await insforge.auth.getCurrentUser()
     
     if (error) {
-      logger.error('[AuthUtils] Error fetching current user', error)
+      logger.debug('[AuthUtils] Session token invalid or expired')
       return null
     }
 
