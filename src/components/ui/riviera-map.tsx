@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
-import type { Client, CollectionPoint } from '@/types'
+import type { Client, CollectionPoint, Task, Asset } from '@/types'
 
 // Riviera Maya bounding box: tierra (W) → mar (E), Cancún (N) → Tulum (S)
 const RIVIERA_BOUNDS: [[number, number], [number, number]] = [
@@ -80,6 +80,32 @@ function buildAcopioIcon(L: any, color: string) {
   })
 }
 
+function buildTaskIcon(L: any, color: string) {
+  return L.divIcon({
+    className: '',
+    html: `<div style="position:relative;width:24px;height:24px;">
+      <svg viewBox="0 0 24 24" width="24" height="24" style="filter:drop-shadow(1px 1px 2px rgba(0,0,0,0.5))">
+        <circle cx="12" cy="12" r="10" fill="${color}" stroke="white" stroke-width="2"/>
+        <path d="M9 12l2 2 4-4" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>`,
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
+  })
+}
+
+function buildAssetIcon(L: any, type: string) {
+  const emoji = type === 'embarcacion' ? '🚤' : type === 'camion' ? '🚛' : '🛻'
+  return L.divIcon({
+    className: '',
+    html: `<div style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;background:white;border-radius:50%;border:2px solid #0d9488;box-shadow:0 2px 4px rgba(0,0,0,0.2);font-size:16px;">
+      ${emoji}
+    </div>`,
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
+  })
+}
+
 function escHtml(str: string): string {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 }
@@ -91,7 +117,7 @@ function getCentroid(points: [number, number][]): [number, number] {
 }
 
 function getEntityCoord(
-  entity: { work_area: [number, number][]; latitude?: number; longitude?: number }
+  entity: { work_area?: [number, number][]; latitude?: number | null; longitude?: number | null }
 ): [number, number] | null {
   if (entity.work_area && entity.work_area.length >= 3) return getCentroid(entity.work_area)
   if (entity.latitude != null && entity.longitude != null) return [entity.latitude, entity.longitude]
@@ -179,6 +205,37 @@ function buildAcopioPopup(point: CollectionPoint, color: string): string {
   return lines.join('')
 }
 
+function buildTaskPopup(task: Task): string {
+  const lines: string[] = []
+  lines.push(`<div style="font-family:system-ui,sans-serif;min-width:180px;max-width:240px;">`)
+  lines.push(`<div style="font-size:11px;font-weight:600;color:#f59e0b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:2px;">Tarea: ${task.status}</div>`)
+  lines.push(`<div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:4px;">${escHtml(task.title)}</div>`)
+  if (task.description) {
+    lines.push(`<div style="font-size:12px;color:#475569;margin-bottom:4px;line-height:1.4;">${escHtml(task.description)}</div>`)
+  }
+  if (task.client) {
+    lines.push(`<div style="font-size:11px;color:#64748b;margin-top:4px;">📍 Cliente: ${escHtml(task.client.name)}</div>`)
+  }
+  if (task.assigned_profile) {
+    lines.push(`<div style="font-size:11px;color:#0d9488;margin-top:2px;">👤 Asignado: ${escHtml(task.assigned_profile.name)}</div>`)
+  }
+  lines.push(`</div>`)
+  return lines.join('')
+}
+
+function buildAssetPopup(asset: Asset): string {
+  const lines: string[] = []
+  lines.push(`<div style="font-family:system-ui,sans-serif;min-width:180px;max-width:240px;">`)
+  lines.push(`<div style="font-size:11px;font-weight:600;color:#0d9488;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:2px;">Activo: ${asset.status}</div>`)
+  lines.push(`<div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:4px;">${escHtml(asset.name)}</div>`)
+  lines.push(`<div style="font-size:11px;color:#64748b;margin-bottom:4px;">Tipo: ${escHtml(asset.type)}</div>`)
+  if (asset.assigned_operator) {
+    lines.push(`<div style="font-size:11px;color:#475569;">👤 Operador: ${escHtml(asset.assigned_operator.name)}</div>`)
+  }
+  lines.push(`</div>`)
+  return lines.join('')
+}
+
 function buildRoutePopup(
   acopio: CollectionPoint,
   client: Client,
@@ -188,30 +245,30 @@ function buildRoutePopup(
   isFallback: boolean
 ): string {
   return `<div style="font-family:system-ui,sans-serif;min-width:200px;max-width:260px;">
-    <div style="font-size:11px;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;">🛣 Ruta por carretera</div>
-    <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px;">
+    <div style="font-size:11px;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">🛣 Ruta por carretera</div>
+    <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px;">
       <div style="flex:1;">
-        <div style="font-size:10px;color:#94a3b8;margin-bottom:1px;">ACOPIO</div>
-        <div style="font-size:12px;font-weight:600;color:#1e293b;">${escHtml(acopio.name)}</div>
+        <div style="font-size:10px;color:#94a3b8;margin-bottom:2px;">ACOPIO</div>
+        <div style="font-size:13px;font-weight:600;color:#1e293b;">${escHtml(acopio.name)}</div>
       </div>
-      <div style="font-size:18px;color:#94a3b8;padding-top:10px;">→</div>
+      <div style="font-size:18px;color:#94a3b8;padding-top:14px;">→</div>
       <div style="flex:1;">
-        <div style="font-size:10px;color:#94a3b8;margin-bottom:1px;">CLIENTE</div>
-        <div style="font-size:12px;font-weight:600;color:#1e293b;">${escHtml(client.name)}</div>
+        <div style="font-size:10px;color:#94a3b8;margin-bottom:2px;">CLIENTE</div>
+        <div style="font-size:13px;font-weight:600;color:#1e293b;">${escHtml(client.name)}</div>
       </div>
     </div>
-    <div style="display:flex;gap:12px;padding:8px;background:#f8fafc;border-radius:8px;">
+    <div style="display:flex;gap:16px;padding:12px;background:#f8fafc;border-radius:10px;border:1px solid #f1f5f9;">
       <div style="text-align:center;flex:1;">
         <div style="font-size:16px;font-weight:700;color:#0f172a;">${formatDistance(distance)}</div>
-        <div style="font-size:10px;color:#94a3b8;">distancia</div>
+        <div style="font-size:10px;color:#94a3b8;font-weight:500;">distancia</div>
       </div>
       <div style="width:1px;background:#e2e8f0;"></div>
       <div style="text-align:center;flex:1;">
         <div style="font-size:16px;font-weight:700;color:#0f172a;">${formatDuration(duration)}</div>
-        <div style="font-size:10px;color:#94a3b8;">en vehículo</div>
+        <div style="font-size:10px;color:#94a3b8;font-weight:500;">en vehículo</div>
       </div>
     </div>
-    ${isFallback ? `<div style="font-size:10px;color:#f59e0b;margin-top:6px;">⚠ Línea en línea recta (sin conexión al router)</div>` : ''}
+    ${isFallback ? `<div style="font-size:10px;color:#f59e0b;margin-top:8px;font-weight:500;">⚠ Línea estimada (sin conexión a red vial)</div>` : ''}
   </div>`
 }
 
@@ -222,13 +279,17 @@ function hasCoords(item: { work_area: [number, number][]; latitude?: number; lon
 interface RivieraMapProps {
   clients: Client[]
   collectionPoints: CollectionPoint[]
+  tasks: Task[]
+  assets: Asset[]
 }
 
-export function RivieraMap({ clients, collectionPoints }: RivieraMapProps) {
+export function RivieraMap({ clients, collectionPoints, tasks, assets }: RivieraMapProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<any>(null)
   const clientLayersRef = useRef<any[]>([])
   const acopioLayersRef = useRef<any[]>([])
+  const taskLayersRef = useRef<any[]>([])
+  const assetLayersRef = useRef<any[]>([])
   const routeLayersRef = useRef<any[]>([])
   const [ready, setReady] = useState(false)
   const [showRoutes, setShowRoutes] = useState(false)
@@ -377,6 +438,8 @@ export function RivieraMap({ clients, collectionPoints }: RivieraMapProps) {
       const stored = containerRef.current as any
       drawClients(L, map, stored._clients || [])
       drawAcopio(L, map, stored._acopio || [])
+      drawTasks(L, map, stored._tasks || [])
+      drawAssets(L, map, stored._assets || [], stored._tasks || [])
 
       setTimeout(() => map.invalidateSize(), 200)
       setReady(true)
@@ -393,10 +456,13 @@ export function RivieraMap({ clients, collectionPoints }: RivieraMapProps) {
 
   useEffect(() => {
     if (containerRef.current) {
-      ;(containerRef.current as any)._clients = clients
-      ;(containerRef.current as any)._acopio = collectionPoints
+      const stored = containerRef.current as any
+      stored._clients = clients
+      stored._acopio = collectionPoints
+      stored._tasks = tasks
+      stored._assets = assets
     }
-  }, [clients, collectionPoints])
+  }, [clients, collectionPoints, tasks, assets])
 
   useEffect(() => {
     if (!ready || !mapRef.current) return
@@ -409,6 +475,18 @@ export function RivieraMap({ clients, collectionPoints }: RivieraMapProps) {
     getLeaflet().then(L => { drawAcopio(L, mapRef.current, collectionPoints) })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, collectionPoints])
+
+  useEffect(() => {
+    if (!ready || !mapRef.current) return
+    getLeaflet().then(L => { drawTasks(L, mapRef.current, tasks) })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, tasks])
+
+  useEffect(() => {
+    if (!ready || !mapRef.current) return
+    getLeaflet().then(L => { drawAssets(L, mapRef.current, assets, tasks) })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, assets, tasks])
 
   // Toggle routes layer
   useEffect(() => {
@@ -501,6 +579,76 @@ export function RivieraMap({ clients, collectionPoints }: RivieraMapProps) {
     })
   }
 
+  function drawTasks(L: any, map: any, taskList: Task[]) {
+    taskLayersRef.current.forEach(l => { try { l.remove() } catch { /* ignore */ } })
+    taskLayersRef.current = []
+
+    taskList.forEach(task => {
+      const coord = getEntityCoord(task) || (task.client ? getEntityCoord(task.client) : null)
+      if (!coord) return
+
+      const color = task.status === 'en_progreso' ? '#f97316' : '#f59e0b'
+      const popupHtml = buildTaskPopup(task)
+      const popupOpts = { maxWidth: 260, className: 'sarg-client-popup' }
+
+      const marker = L.marker(coord, {
+        icon: buildTaskIcon(L, color),
+        title: task.title,
+        zIndexOffset: 1000,
+      }).addTo(map)
+
+      marker.bindPopup(popupHtml, popupOpts)
+      taskLayersRef.current.push(marker)
+    })
+  }
+
+  function drawAssets(L: any, map: any, assetList: Asset[], taskList: Task[]) {
+    assetLayersRef.current.forEach(l => { try { l.remove() } catch { /* ignore */ } })
+    assetLayersRef.current = []
+
+    assetList.forEach(asset => {
+      const operator = asset.assigned_operator
+      let assetCoord: [number, number] | null = null
+      let isSimulated = false
+
+      // 1. Priority: Real operator geolocalization
+      if (operator && operator.latitude != null && operator.longitude != null) {
+        assetCoord = [operator.latitude, operator.longitude]
+      } 
+      // 2. Fallback: Task location (if operational and no real GPS)
+      else if (asset.status === 'en_uso' && asset.current_task_id) {
+        const relatedTask = taskList.find(t => t.id === asset.current_task_id)
+        if (relatedTask) {
+          const coord = getEntityCoord(relatedTask) || (relatedTask.client ? getEntityCoord(relatedTask.client) : null)
+          if (coord) {
+            // Offset slightly to avoid hiding the task marker
+            assetCoord = [coord[0] + 0.0003, coord[1] + 0.0003]
+            isSimulated = true
+          }
+        }
+      }
+
+      if (!assetCoord) return
+
+      const popupHtml = buildAssetPopup(asset)
+      // Append info about location source
+      const sourceHtml = isSimulated 
+        ? `<div style="font-size:10px;color:#f59e0b;margin-top:4px;font-style:italic;">📍 Ubicación estimada (en zona de tarea)</div>`
+        : `<div style="font-size:10px;color:#0d9488;margin-top:4px;font-style:italic;">📡 GPS en tiempo real (Operador: ${operator?.name})</div>`
+      
+      const fullPopupHtml = popupHtml.replace('</div>', `${sourceHtml}</div>`)
+
+      const marker = L.marker(assetCoord, {
+        icon: buildAssetIcon(L, asset.type),
+        title: asset.name,
+        zIndexOffset: 2000,
+      }).addTo(map)
+
+      marker.bindPopup(fullPopupHtml, { maxWidth: 260, className: 'sarg-client-popup' })
+      assetLayersRef.current.push(marker)
+    })
+  }
+
   const routeButtonLabel = routesLoading
     ? `Calculando… ${routeStats ? `${routeStats.loaded}/${routeStats.total}` : ''}`
     : showRoutes
@@ -568,6 +716,14 @@ export function RivieraMap({ clients, collectionPoints }: RivieraMapProps) {
               <span className="inline-block w-3 h-3 rounded-sm flex-shrink-0" style={{ background: '#f97316' }} />
               <span className="text-xs text-zinc-600">Punto de acopio</span>
             </div>
+            <div className="flex items-center gap-2">
+              <span className="inline-block w-3 h-3 rounded-full flex-shrink-0 border-2 border-white shadow-sm" style={{ background: '#f59e0b' }} />
+              <span className="text-xs text-zinc-600">Tarea activa</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-white border border-teal-600 rounded-full flex items-center justify-center text-[8px] shadow-sm">🚤</div>
+              <span className="text-xs text-zinc-600">Activo (en uso)</span>
+            </div>
             {showRoutes && (
               <div className="flex items-center gap-2 border-t border-zinc-100 pt-1 mt-1">
                 <span className="inline-block w-4 h-0.5 rounded flex-shrink-0" style={{ background: '#f97316' }} />
@@ -599,12 +755,19 @@ export function RivieraMap({ clients, collectionPoints }: RivieraMapProps) {
       <style>{`
         .leaflet-container { background: #c8d8e8; }
         .sarg-client-popup .leaflet-popup-content-wrapper {
-          border-radius: 12px;
-          box-shadow: 0 4px 24px rgba(0,0,0,0.15);
-          padding: 0;
+          border-radius: 16px;
+          box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
+          padding: 8px;
         }
         .sarg-client-popup .leaflet-popup-content {
-          margin: 12px 14px;
+          margin: 12px 16px;
+          line-height: 1.5;
+        }
+        .sarg-client-popup .leaflet-popup-close-button {
+          top: 8px !important;
+          right: 8px !important;
+          color: #94a3b8 !important;
+          font-size: 16px !important;
         }
         .sarg-client-popup .leaflet-popup-tip-container {
           margin-top: -1px;

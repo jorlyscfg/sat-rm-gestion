@@ -25,7 +25,7 @@ export async function getTasks(filters?: TaskFilters): Promise<{ data: Task[] | 
 
   let query = insforge.database
     .from('tasks')
-    .select('*, assigned_profile:profiles!tasks_assigned_to_fkey(id, name, role), created_by_profile:profiles!tasks_created_by_fkey(id, name, role), task_assets(asset:assets(*, assigned_operator:profiles!assets_assigned_operator_id_fkey(id, name, role))), task_barriers(barrier:barriers(*))')
+    .select('*, assigned_profile:profiles!tasks_assigned_to_fkey(id, name, role), created_by_profile:profiles!tasks_created_by_fkey(id, name, role), client:clients(*), task_assets(asset:assets(*, assigned_operator:profiles!assets_assigned_operator_id_fkey(id, name, role))), task_barriers(barrier:barriers(*))')
     .order('created_at', { ascending: false })
 
   if (filters?.statuses && filters.statuses.length > 0) query = query.in('status', filters.statuses)

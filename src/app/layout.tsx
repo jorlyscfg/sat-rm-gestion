@@ -7,6 +7,7 @@ import { AuthSync } from "@/components/auth/auth-sync";
 import { SessionProvider } from "@/components/auth/session-provider";
 import type { Profile, UserRole } from "@/types";
 import { logger } from "@/lib/logger";
+import { PWARegistration } from "@/components/pwa-registration";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -22,7 +23,14 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "SATS-RM | Gestión de Sargazo",
   description: "Sistema de Gestión Operativa para Respuesta al Sargazo",
-  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "SATS-RM",
+  },
+  formatDetection: {
+    telephone: false,
+  },
 };
 
 export const viewport: Viewport = {
@@ -55,13 +63,21 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const profile = await getProfile();
-  logger.info('[RootLayout] Rendering', { hasProfile: !!profile, role: profile?.role });
+  // Solo intentamos obtener el perfil si hay un token de acceso
+  const cookieStore = await cookies();
+  const hasToken = cookieStore.has("insforge_access_token");
+  
+  const profile = hasToken ? await getProfile() : null;
+  
+  if (hasToken) {
+    logger.info('[RootLayout] Rendering with session', { role: profile?.role });
+  }
 
   return (
     <html lang="es" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`} suppressHydrationWarning>
       <body className="min-h-dvh flex flex-col bg-zinc-50">
         <SessionProvider profile={profile}>
+          <PWARegistration />
           <AuthSync />
           <TopNav />
           {children}

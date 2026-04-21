@@ -97,7 +97,7 @@ export async function createManagedAccount(input: {
 
 export async function updateProfile(
   id: string,
-  updates: Partial<Pick<Profile, 'name' | 'phone' | 'role' | 'is_active'>>
+  updates: Partial<Pick<Profile, 'name' | 'phone' | 'role' | 'is_active' | 'latitude' | 'longitude'>>
 ): Promise<{ data: Profile | null; error: string | null }> {
   const { accessToken } = await getAuthCookies()
   if (!accessToken) return { data: null, error: 'No autenticado' }

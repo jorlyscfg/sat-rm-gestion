@@ -3,12 +3,12 @@
 import { useState, useRef, useEffect } from 'react'
 import { updateBarrier } from '@/app/actions/assets'
 import { useRouter } from 'next/navigation'
-import type { Barrier } from '@/types'
+import type { Asset } from '@/types'
 
 const RIVIERA_CENTER: [number, number] = [20.5074, -87.4685]
 
 interface BarrierDeploymentModalProps {
-  barrier: Barrier
+  barrier: Asset
   workArea: [number, number][]
   onClose: () => void
 }

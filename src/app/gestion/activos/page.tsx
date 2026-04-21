@@ -11,7 +11,7 @@ import { CompactSelect } from '@/components/ui/select'
 import { ASSET_TYPE_LABELS, ASSET_STATUS_LABELS, ASSET_STATUS_COLORS, BARRIER_TYPE_LABELS, BARRIER_STATUS_LABELS, BARRIER_STATUS_COLORS } from '@/lib/utils'
 import { ImageUploadMulti } from '@/components/ui/image-upload-multi'
 import { ImagePreviewModal } from '@/components/ui/image-preview-modal'
-import type { Asset, Barrier, AssetType, AssetStatus, BarrierType, BarrierStatus } from '@/types'
+import type { Asset, AssetType, AssetStatus, BarrierType, BarrierStatus } from '@/types'
 
 type Tab = 'embarcaciones' | 'vehiculos' | 'barreras'
 
@@ -24,14 +24,14 @@ export default function ActivosPage() {
   const profile = useSessionProfile()
   const [tab, setTab] = useState<Tab>('embarcaciones')
   const [assets, setAssets] = useState<Asset[]>([])
-  const [barriers, setBarriers] = useState<Barrier[]>([])
+  const [barriers, setBarriers] = useState<Asset[]>([])
   const [loading, setLoading] = useState(true)
   const [filterStatus, setFilterStatus] = useState<string>('')
 
   const [showNewAsset, setShowNewAsset] = useState(false)
   const [showNewBarrier, setShowNewBarrier] = useState(false)
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null)
-  const [editingBarrier, setEditingBarrier] = useState<Barrier | null>(null)
+  const [editingBarrier, setEditingBarrier] = useState<Asset | null>(null)
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState('')
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
@@ -40,13 +40,24 @@ export default function ActivosPage() {
   const isAdmin = profile ? ['superadmin', 'gerente'].includes(profile.role) : false
 
   const loadData = useCallback(async () => {
-    const [assetsResult, barriersResult] = await Promise.all([
-      getAssets(filterStatus ? { status: filterStatus } : undefined),
-      getBarriers(),
-    ])
-    if (assetsResult.data) setAssets(assetsResult.data)
-    if (barriersResult.data) setBarriers(barriersResult.data)
-    setLoading(false)
+    setLoading(true)
+    setError('')
+    try {
+      const [assetsResult, barriersResult] = await Promise.all([
+        getAssets(filterStatus ? { status: filterStatus } : undefined),
+        getBarriers(),
+      ])
+      
+      if (assetsResult.error) setError(assetsResult.error)
+      else if (assetsResult.data) setAssets(assetsResult.data)
+      
+      if (barriersResult.error) setError(prev => prev ? `${prev} | ${barriersResult.error}` : barriersResult.error!)
+      else if (barriersResult.data) setBarriers(barriersResult.data)
+    } catch (err: any) {
+      setError(err.message || 'Error al cargar datos')
+    } finally {
+      setLoading(false)
+    }
   }, [filterStatus])
 
   useEffect(() => { loadData() }, [loadData])
@@ -104,18 +115,27 @@ export default function ActivosPage() {
         ) : tab === 'barreras' ? (
           <div className="space-y-2">
             {barriers.map(b => (
-              <div key={b.id} className="bg-white rounded-xl border border-zinc-200 p-4">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="text-sm font-semibold text-zinc-900">{b.name}</h3>
-                    <p className="text-xs text-zinc-500 mt-0.5">{BARRIER_TYPE_LABELS[b.type] || b.type}</p>
+              <div key={b.id} className="bg-white rounded-xl border border-zinc-200 p-5">
+                <div className="flex justify-between items-start gap-4">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-sm font-semibold text-zinc-900 truncate">{b.name}</h3>
+                    <p className="text-xs text-zinc-500 mt-0.5">
+                      {BARRIER_TYPE_LABELS[b.type as any] || b.type}
+                      {b.length_m && <span className="mx-1">•</span>}
+                      {b.length_m ? `${b.length_m}m` : ''}
+                    </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <StatusBadge label={BARRIER_STATUS_LABELS[b.status]} colorClass={BARRIER_STATUS_COLORS[b.status]} />
+                    {b.status !== 'sin_operador' && (
+                      <StatusBadge 
+                        label={ASSET_STATUS_LABELS[b.status] || b.status} 
+                        colorClass={ASSET_STATUS_COLORS[b.status] || 'bg-zinc-100 text-zinc-600'} 
+                      />
+                    )}
                     {isAdmin && (
                       <div className="flex items-center gap-1">
                         <button
-                          onClick={() => setEditingBarrier(b)}
+                          onClick={() => setEditingBarrier(b as any)}
                           className="p-1 text-zinc-400 hover:text-zinc-600 transition-colors"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" /></svg>
@@ -130,15 +150,28 @@ export default function ActivosPage() {
                     )}
                   </div>
                 </div>
-                {b.length_m && <p className="text-xs text-zinc-500 mt-1">Longitud: {b.length_m}m</p>}
-                {b.description && <p className="text-xs text-zinc-400 mt-1">{b.description}</p>}
+
+                {/* Operator assignment - Now for barriers too! */}
+                <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                  {b.assigned_operator ? (
+                    <span className="inline-flex items-center gap-1 text-xs text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full border border-teal-100 font-medium">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
+                      {b.assigned_operator.name}
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-xs text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full border border-orange-100 font-medium">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
+                      Sin operador asignado
+                    </span>
+                  )}
+                </div>
 
                 {b.image_urls && b.image_urls.length > 0 && (
                   <div className="flex gap-1.5 mt-3 overflow-x-auto pb-1 scrollbar-hide">
                     {b.image_urls.map((url, i) => (
                       <div 
                         key={i} 
-                        className="flex-none w-14 h-14 rounded-lg overflow-hidden border border-zinc-200 cursor-zoom-in active:scale-95 transition-transform"
+                        className="flex-none w-14 h-14 rounded-lg overflow-hidden border border-zinc-200 cursor-zoom-in"
                         onClick={() => setPreviewUrl(url)}
                       >
                         <img src={url} alt={`Barrier ${i}`} className="w-full h-full object-cover" />
@@ -153,14 +186,16 @@ export default function ActivosPage() {
         ) : (
           <div className="space-y-2">
             {filteredAssets.map(a => (
-              <div key={a.id} className="bg-white rounded-xl border border-zinc-200 p-4">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="text-sm font-semibold text-zinc-900">{a.name}</h3>
+              <div key={a.id} className="bg-white rounded-xl border border-zinc-200 p-5">
+                <div className="flex justify-between items-start gap-4">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-sm font-semibold text-zinc-900 truncate">{a.name}</h3>
                     <p className="text-xs text-zinc-500 mt-0.5">{ASSET_TYPE_LABELS[a.type]}</p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <StatusBadge label={ASSET_STATUS_LABELS[a.status]} colorClass={ASSET_STATUS_COLORS[a.status]} />
+                  <div className="flex items-center gap-2 shrink-0">
+                    {a.status !== 'sin_operador' && (
+                      <StatusBadge label={ASSET_STATUS_LABELS[a.status]} colorClass={ASSET_STATUS_COLORS[a.status]} />
+                    )}
                     {isAdmin && (
                       <div className="flex items-center gap-1">
                         <button
@@ -184,17 +219,15 @@ export default function ActivosPage() {
 
                 {/* Assigned operators */}
                 <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                  {a.asset_operators && a.asset_operators.length > 0 ? (
-                    a.asset_operators.map((ao, idx) => (
-                      <span key={idx} className="inline-flex items-center gap-1 text-xs text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full border border-teal-100 font-medium">
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
-                        {ao.profile?.name || 'Operador'}
-                      </span>
-                    ))
+                  {a.assigned_operator ? (
+                    <span className="inline-flex items-center gap-1 text-xs text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full border border-teal-100 font-medium">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
+                      {a.assigned_operator.name}
+                    </span>
                   ) : (
                     <span className="inline-flex items-center gap-1 text-xs text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full border border-orange-100 font-medium">
                       <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
-                      Sin operadores asignados
+                      Sin operador asignado
                     </span>
                   )}
                 </div>
@@ -242,7 +275,7 @@ export default function ActivosPage() {
           onPreview={setPreviewUrl}
           onSubmit={async (input) => {
             setError('')
-            const result = await createBarrier(input)
+            const result = await createBarrier(input as any)
             if (result.error) { setError(result.error); return }
             setShowNewBarrier(false)
             reload()
@@ -271,12 +304,12 @@ export default function ActivosPage() {
 
       {editingBarrier && (
         <EditBarrierModal
-          barrier={editingBarrier}
+          barrier={editingBarrier as any}
           onClose={() => setEditingBarrier(null)}
           onPreview={setPreviewUrl}
           onSubmit={async (id, updates) => {
             setError('')
-            const result = await updateBarrier(id, updates)
+            const result = await updateBarrier(id, updates as any)
             if (result.error) { setError(result.error); return }
             setEditingBarrier(null)
             reload()
@@ -517,7 +550,7 @@ function NewBarrierModal({ onClose, onPreview, onSubmit, isPending, startTransit
                 onSubmit({
                   name,
                   type,
-                  status: 'almacenada',
+                  status: 'disponible',
                   length_m: lengthM ? parseFloat(lengthM) : undefined,
                   description: description || undefined,
                   image_urls: imageUrls,
@@ -634,10 +667,10 @@ function EditAssetModal({ asset, onClose, onPreview, onSubmit, isPending, startT
 }
 
 function EditBarrierModal({ barrier, onClose, onPreview, onSubmit, isPending, startTransition }: {
-  barrier: Barrier
+  barrier: Asset
   onClose: () => void
   onPreview: (url: string) => void
-  onSubmit: (id: string, updates: Partial<Barrier>) => void
+  onSubmit: (id: string, updates: Partial<Asset>) => void
   isPending: boolean
   startTransition: React.TransitionStartFunction
 }) {
@@ -709,9 +742,9 @@ function EditBarrierModal({ barrier, onClose, onPreview, onSubmit, isPending, st
           <button
             onClick={() => {
               startTransition(() => {
-                const updates: Partial<Barrier> = {}
+                const updates: Partial<Asset> = {}
                 if (name !== barrier.name) updates.name = name
-                if (status !== barrier.status) updates.status = status as BarrierStatus
+                if (status !== barrier.status) updates.status = status as AssetStatus
                 if (lengthM !== (barrier.length_m?.toString() || '')) updates.length_m = lengthM ? parseFloat(lengthM) : undefined
                 if (description !== (barrier.description || '')) updates.description = description || undefined
                 if (JSON.stringify(imageUrls) !== JSON.stringify(barrier.image_urls || [])) updates.image_urls = imageUrls

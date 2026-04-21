@@ -3,8 +3,10 @@
 import { useEffect, useState } from 'react'
 import { getClients } from '@/app/actions/clients'
 import { getCollectionPoints } from '@/app/actions/collection-points'
+import { getTasks } from '@/app/actions/tasks'
+import { getAssets } from '@/app/actions/assets'
 import { BottomNav } from '@/components/layout/bottom-nav'
-import type { Client, CollectionPoint } from '@/types'
+import type { Client, CollectionPoint, Task, Asset } from '@/types'
 import dynamic from 'next/dynamic'
 
 const RivieraMap = dynamic(
@@ -12,9 +14,15 @@ const RivieraMap = dynamic(
   { ssr: false }
 )
 
+function hasCoords(item: { work_area?: [number, number][]; latitude?: number | null; longitude?: number | null }) {
+  return (item.work_area && item.work_area.length >= 3) || (item.latitude != null && item.longitude != null)
+}
+
 export default function MapaPage() {
   const [clients, setClients] = useState<Client[]>([])
   const [collectionPoints, setCollectionPoints] = useState<CollectionPoint[]>([])
+  const [tasks, setTasks] = useState<Task[]>([])
+  const [assets, setAssets] = useState<Asset[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -22,22 +30,24 @@ export default function MapaPage() {
     Promise.all([
       getClients({ isActive: true }),
       getCollectionPoints({ isActive: true }),
-    ]).then(([clientsResult, acopioResult]) => {
-      if (clientsResult.error) {
-        setError(clientsResult.error)
-      } else {
-        setClients(clientsResult.data ?? [])
-      }
-      if (acopioResult.data) {
-        setCollectionPoints(acopioResult.data)
-      }
+      getTasks({ statuses: ['pendiente', 'asignada', 'en_progreso'] }),
+      getAssets(),
+    ]).then(([clientsResult, acopioResult, tasksResult, assetsResult]) => {
+      if (clientsResult.error) setError(clientsResult.error)
+      else setClients(clientsResult.data ?? [])
+      
+      if (acopioResult.data) setCollectionPoints(acopioResult.data)
+      if (tasksResult.data) setTasks(tasksResult.data)
+      if (assetsResult.data) setAssets(assetsResult.data)
+      
       setLoading(false)
     })
   }, [])
 
   const totalOnMap =
-    clients.filter(c => (c.work_area && c.work_area.length >= 3) || c.latitude != null).length +
-    collectionPoints.filter(p => (p.work_area && p.work_area.length >= 3) || p.latitude != null).length
+    clients.filter(c => hasCoords(c)).length +
+    collectionPoints.filter(p => hasCoords(p)).length +
+    tasks.filter(t => hasCoords(t) || (t.client && hasCoords(t.client))).length
 
   return (
     <div className="fixed inset-0 flex flex-col" style={{ paddingTop: 56, paddingBottom: 64 }}>
@@ -56,7 +66,7 @@ export default function MapaPage() {
         )}
         {!loading && !error && (
           <span className="ml-auto text-xs text-zinc-400">
-            {clients.length} clientes · {collectionPoints.length} acopios · {totalOnMap} en mapa
+            {clients.length} C · {collectionPoints.length} A · {tasks.length} T · {totalOnMap} en mapa
           </span>
         )}
       </div>
@@ -74,7 +84,7 @@ export default function MapaPage() {
             </div>
           </div>
         ) : (
-          <RivieraMap clients={clients} collectionPoints={collectionPoints} />
+          <RivieraMap clients={clients} collectionPoints={collectionPoints} tasks={tasks} assets={assets} />
         )}
       </div>
 

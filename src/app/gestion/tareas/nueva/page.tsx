@@ -11,7 +11,7 @@ import { useSessionProfile } from '@/components/auth/session-provider'
 import { BottomNav } from '@/components/layout/bottom-nav'
 import { Select } from '@/components/ui/select'
 import { TASK_TYPE_LABELS, TASK_PRIORITY_LABELS, ROLE_LABELS, ZONE_LABELS, ZONE_COLORS, ASSET_TYPE_LABELS, BARRIER_TYPE_LABELS } from '@/lib/utils'
-import type { TaskType, TaskPriority, Profile, Client, Asset, CollectionPoint, Barrier } from '@/types'
+import type { TaskType, TaskPriority, Profile, Client, Asset, CollectionPoint } from '@/types'
 
 const taskTypes: TaskType[] = ['barrera_despliegue', 'colecta_marina', 'limpieza_playa', 'acopio_recepcion', 'disposicion', 'inspeccion']
 const taskPriorities: TaskPriority[] = ['baja', 'media', 'alta', 'urgente']
@@ -37,7 +37,7 @@ export default function NuevaTareaPage() {
   const [operators, setOperators] = useState<Profile[]>([])
   const [clients, setClients] = useState<Client[]>([])
   const [availableAssets, setAvailableAssets] = useState<Asset[]>([])
-  const [availableBarriers, setAvailableBarriers] = useState<Barrier[]>([])
+  const [availableBarriers, setAvailableBarriers] = useState<Asset[]>([])
   const [collectionPoints, setCollectionPoints] = useState<CollectionPoint[]>([])
   const [error, setError] = useState('')
 

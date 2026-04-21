@@ -1,26 +1,32 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import { usePathname } from 'next/navigation'
 import { createInsForgeClient } from '@/lib/insforge'
 import { logger } from '@/lib/logger'
 
 const SYNC_INTERVAL = 5 * 60 * 1000
 
 export function AuthSync() {
+  const pathname = usePathname()
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => {
+    const isAuthPage = pathname.startsWith('/auth')
+    if (isAuthPage) return
+
     logger.debug('[AuthSync] Initializing interval sync')
     intervalRef.current = setInterval(async () => {
       try {
-        logger.debug('[AuthSync] Checking session refresh...')
         const insforge = createInsForgeClient()
+        
+        logger.debug('[AuthSync] Attempting background session refresh...')
         const { data: refreshData, error: refreshError } = await insforge.auth.refreshSession()
 
         if (refreshError || !refreshData?.accessToken) {
-          logger.warn('[AuthSync] Session refresh failed or no token. Clearing cookies and redirecting.', refreshError)
-          await fetch('/api/auth/set-cookies', { method: 'DELETE' }).catch(() => {})
-          window.location.href = '/auth/sign-in'
+          // No hacemos nada si falla. Si la sesión realmente expiró,
+          // las Server Actions o el Middleware se encargarán de redirigir.
+          logger.debug('[AuthSync] Background refresh skipped or failed (likely no client-side session).')
           return
         }
 
@@ -42,7 +48,7 @@ export function AuthSync() {
       logger.debug('[AuthSync] Cleaning up interval sync')
       if (intervalRef.current) clearInterval(intervalRef.current)
     }
-  }, [])
+  }, [pathname])
 
   return null
 }

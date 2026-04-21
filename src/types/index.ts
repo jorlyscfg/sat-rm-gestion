@@ -15,9 +15,9 @@ export type TaskStatus = 'pendiente' | 'asignada' | 'en_progreso' | 'completada'
 
 export type TaskPriority = 'baja' | 'media' | 'alta' | 'urgente'
 
-export type AssetType = 'embarcacion' | 'atv' | 'pickup' | 'camion'
+export type AssetType = 'embarcacion' | 'atv' | 'pickup' | 'camion' | 'barrera'
 
-export type AssetStatus = 'sin_operador' | 'disponible' | 'en_uso' | 'mantenimiento' | 'fuera_de_servicio'
+export type AssetStatus = 'sin_operador' | 'disponible' | 'en_uso' | 'mantenimiento' | 'fuera_de_servicio' | 'desplegada' | 'almacenada' | 'dañada'
 
 export type BarrierType = 'flotante' | 'fija' | 'mixta'
 
@@ -40,6 +40,8 @@ export interface Profile {
   role: UserRole
   phone?: string
   is_active: boolean
+  latitude?: number
+  longitude?: number
   organization_id?: string
   organization?: Organization
   created_at: string
@@ -148,6 +150,7 @@ export interface Asset {
   type: AssetType
   status: AssetStatus
   capacity?: number
+  length_m?: number
   description?: string
   metadata?: Record<string, unknown>
   current_task_id?: string | null
@@ -157,6 +160,10 @@ export interface Asset {
   updated_at: string
   asset_operators?: AssetOperator[]
   task_assets?: TaskAsset[]
+  assigned_operator_id?: string | null
+  assigned_operator?: Profile
+  latitude?: number | null
+  longitude?: number | null
 }
 
 export interface TaskAsset {
@@ -171,7 +178,7 @@ export interface TaskBarrier {
   task_id: string
   barrier_id: string
   assigned_at: string
-  barrier?: Barrier
+  barrier?: Asset
   task?: Task
 }
 
@@ -183,19 +190,8 @@ export interface AssetOperator {
   asset?: Asset
 }
 
-export interface Barrier {
-  id: string
-  name: string
-  type: BarrierType
-  status: BarrierStatus
-  length_m?: number
-  latitude?: number
-  longitude?: number
-  description?: string
-  image_urls?: string[]
-  created_at: string
-  updated_at: string
-}
+// Barrier interface is now deprecated in favor of Asset
+// export interface Barrier { ... }
 
 export interface MarineCollection {
   id: string
