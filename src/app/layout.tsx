@@ -77,7 +77,7 @@ export default async function RootLayout({
     <html lang="es" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`} suppressHydrationWarning>
       <body className="min-h-dvh flex flex-col bg-zinc-50">
         <SessionProvider profile={profile}>
-          {/* <PWARegistration /> */}
+          <PWARegistration />
           <AuthSync />
           <TopNav />
           {children}
