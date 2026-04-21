@@ -47,6 +47,7 @@ export default function EditarAcopioPage() {
       setCapacityM3(p.capacity_m3 != null ? String(p.capacity_m3) : '')
       if (p.latitude && p.longitude) {
         setMapCenter([p.latitude, p.longitude])
+        setPlaceLabel(p.name)
       }
     }
     setLoading(false)

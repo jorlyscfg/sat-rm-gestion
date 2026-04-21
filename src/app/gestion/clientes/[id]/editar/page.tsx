@@ -43,6 +43,7 @@ export default function EditarClientePage() {
       setContactAddress(c.contact_address || '')
       if (c.latitude && c.longitude) {
         setMapCenter([c.latitude, c.longitude])
+        setPlaceLabel(c.name)
       }
     }
     setLoading(false)

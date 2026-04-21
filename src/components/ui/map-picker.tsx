@@ -277,10 +277,23 @@ export function AreaPicker({ points, onChange, mapCenter, placeLabel }: AreaPick
     drawAll(LRef.current, mapRef.current, points)
   }, [ready, points])
 
+  const [didFit, setDidFit] = useState(false)
+
   useEffect(() => {
-    if (!mapRef.current || !mapCenter) return
+    if (!ready || !LRef.current || !mapRef.current || didFit) return
+    if (points.length >= 3) {
+      mapRef.current.fitBounds(LRef.current.latLngBounds(points), { padding: [40, 40] })
+      setDidFit(true)
+    } else if (mapCenter) {
+      mapRef.current.setView(mapCenter, DEFAULT_ZOOM)
+      setDidFit(true)
+    }
+  }, [ready, points, mapCenter, didFit])
+
+  useEffect(() => {
+    if (!mapRef.current || !mapCenter || !ready) return
     mapRef.current.setView(mapCenter, DEFAULT_ZOOM)
-  }, [mapCenter])
+  }, [mapCenter, ready])
 
   useEffect(() => {
     const L = LRef.current
