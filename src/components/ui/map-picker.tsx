@@ -249,7 +249,9 @@ export function AreaPicker({ points, onChange, mapCenter, placeLabel }: AreaPick
       ;(containerRef.current as any)._mapInit = true
 
       LRef.current = L
-      map = initMap(L, containerRef.current, RIVIERA_CENTER)
+      const initialCenter = mapCenter || (pointsRef.current.length > 0 ? pointsRef.current[0] : RIVIERA_CENTER)
+      console.log('[AreaPicker] Initializing map at:', initialCenter, 'with points:', pointsRef.current.length)
+      map = initMap(L, containerRef.current, initialCenter)
 
       map.on('click', (e: any) => {
         const pt: [number, number] = [e.latlng.lat, e.latlng.lng]
@@ -260,6 +262,15 @@ export function AreaPicker({ points, onChange, mapCenter, placeLabel }: AreaPick
 
       mapRef.current = map
       drawAll(L, map, pointsRef.current)
+      
+      if (pointsRef.current.length >= 3) {
+        console.log('[AreaPicker] Initial fitBounds')
+        map.fitBounds(L.latLngBounds(pointsRef.current), { padding: [40, 40] })
+        setDidFit(true)
+      } else if (mapCenter) {
+        setDidFit(true)
+      }
+      
       setReady(true)
     })
 

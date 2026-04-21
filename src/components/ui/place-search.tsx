@@ -48,7 +48,7 @@ export function PlaceSearch({ onSelect, value, onChange }: PlaceSearchProps) {
       try {
         const res = await fetch(
           `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&viewbox=-92.5,16,-86,23&boundedby=1`,
-          { headers: { 'Accept-Language': 'es' } }
+          { headers: { 'Accept-Language': 'es', 'User-Agent': 'SATS-RM/1.0' } }
         )
         const data = await res.json()
         setResults(data)

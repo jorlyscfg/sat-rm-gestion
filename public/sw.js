@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sarg-rm-v2';
+const CACHE_NAME = 'sarg-rm-v3';
 const OFFLINE_URL = '/';
 
 self.addEventListener('install', (event) => {
