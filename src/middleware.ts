@@ -24,11 +24,6 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  if (isAuthPage && hasToken) {
-    logger.info(`[Proxy] Redirecting to home from auth page ${pathname}`)
-    return NextResponse.redirect(new URL('/', request.url))
-  }
-
   return NextResponse.next()
 }
 
